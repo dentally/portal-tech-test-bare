@@ -14,16 +14,19 @@ describe('AppComponent', () => {
     expect(app).toBeTruthy();
   });
 
-  it(`should have the 'appointment-availability' title`, () => {
-    const fixture = TestBed.createComponent(AppComponent);
-    const app = fixture.componentInstance;
-    expect(app.title).toEqual('appointment-availability');
-  });
+  // Implement test to _generateAvailability passing an array that only includes the first practitioners appts from `appointment-availability/src/app/data.ts`
 
-  it('should render title', () => {
-    const fixture = TestBed.createComponent(AppComponent);
-    fixture.detectChanges();
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, appointment-availability');
-  });
+  // Implement test to _generateAvailability passing an array that only includes the second practitioners appts from `appointment-availability/src/app/data.ts`
+
+  // Implement test to _generateAvailability passing an array that includes all practitioners appts from `appointment-availability/src/app/data.ts`
+
+  // Implement test to _generateAvailability with a an appointment duration of 15 minutes
+
+  // Implement test to _generateAvailability with a an appointment duration of 45 minutes
+
+  // Implement test to _generateAvailability with a an appointment gap of 5 minutes
+
+  // Implement test to _generateAvailability with a an appointment gap of 15 minutes
+
+  // Implement test to _generateAvailability with a variable number of suggested slots
 });
