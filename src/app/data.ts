@@ -1,4 +1,4 @@
-import { E_Appointment_State } from "../enums";
+import { E_Appointment_State } from "./enums";
 
 export const pract_appointments = [
   {

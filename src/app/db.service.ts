@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { NgxIndexedDBService } from 'ngx-indexed-db';
 import { forkJoin, Observable } from 'rxjs';
-import { E_IndexDb_Resource } from '../enums';
+import { E_IndexDb_Resource } from './enums';
 
 @Injectable({
   providedIn: 'root',

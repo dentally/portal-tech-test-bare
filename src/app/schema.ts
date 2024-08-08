@@ -1,5 +1,5 @@
 import { DBConfig } from "ngx-indexed-db";
-import { E_IndexDb_Resource } from "../enums";
+import { E_IndexDb_Resource } from "./enums";
 
 export const dbSchema: DBConfig = {
   name: 'PortalDb',

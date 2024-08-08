@@ -8,11 +8,11 @@ import { NgxIndexedDBModule } from 'ngx-indexed-db';
 import { AppComponent } from './app/app.component';
 import { DbService } from './app/db.service';
 import { firstValueFrom } from 'rxjs';
-import { PractitionerAppointmentsBase } from './types';
+import { PractitionerAppointmentsBase } from './app/types';
 import { pract_appointments } from './app/data';
 import { bootstrapApplication } from '@angular/platform-browser';
 import { dbSchema } from './app/schema';
-import { E_IndexDb_Resource } from './enums';
+import { E_IndexDb_Resource } from './app/enums';
 
 export function initializeApp(dbService: DbService) {
   return async (): Promise<any> => {

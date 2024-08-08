@@ -3,13 +3,13 @@ import {
   E_IndexDb_Resource,
   E_Practice_Opening_Hours,
   E_Practitioner_Lunch_Hours,
-} from '../enums';
+} from './enums';
 import {
   AvailabilityBase,
   PractitionerAppointmentsBase,
   AvailabilitySlotBase,
   AppointmentBase,
-} from '../types';
+} from './types';
 import { DbService } from './db.service';
 import { timeToMinutes, minutesToTime } from './helpers';
 import { CommonModule } from '@angular/common';
