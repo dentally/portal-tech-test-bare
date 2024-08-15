@@ -11,12 +11,18 @@ import {
   AppointmentBase,
 } from './types';
 import { DbService } from './db.service';
-import { timeToMinutes, minutesToTime } from './helpers';
+import { timeToMinutes, minutesToTime, random } from './helpers';
 import { CommonModule } from '@angular/common';
 
 const SLOT_DURATION = 30; // Fixed duration of 30 minutes
 const MIN_GAP = 10; // Minimum gap of 10 minutes between appointments
 const NUM_SUGGESTIONS = 4; // Number of suggestions to generate
+
+interface I_AvailabilityOptions {
+  slotDuration: number;
+  minGap: number;
+  numberOfSuggestions: number;
+}
 
 @Component({
   selector: 'app-root',
@@ -42,68 +48,101 @@ export class AppComponent implements OnInit {
         E_IndexDb_Resource.PRACTITIONER_APPOINTMENTS
       )
       .subscribe((data) => {
-        this._generateAvailability(data);
+        this.availability = this._generateAvailability(data);
+
+        if (NUM_SUGGESTIONS) {
+          for (const availability of this.availability) {
+            availability.available_slots = this._getRandomSlots(
+              availability.available_slots,
+              NUM_SUGGESTIONS
+            );
+          }
+        }
       });
   }
 
-  private _generateAvailability(data: Array<PractitionerAppointmentsBase>) {
+  private _generateAvailability(data: Array<PractitionerAppointmentsBase>, options?: I_AvailabilityOptions): Array<AvailabilityBase> {
     const startOfDay = timeToMinutes(E_Practice_Opening_Hours.START_TIME);
     const endOfDay = timeToMinutes(E_Practice_Opening_Hours.END_TIME);
     const lunchStart = timeToMinutes(E_Practitioner_Lunch_Hours.START_TIME);
     const lunchEnd = timeToMinutes(E_Practitioner_Lunch_Hours.END_TIME);
 
-    // let allSlots: Array<AvailabilitySlotBase> = [];
-    // let slotSet = new Set<string>(); // To keep track of unique slots
-    // const slot_increments = MIN_GAP || 5; // Allow for a minimum gap of 5 minutes between slots
+    options = {
+      slotDuration: SLOT_DURATION,
+      minGap: MIN_GAP,
+      numberOfSuggestions: NUM_SUGGESTIONS,
+      ...options,
+    };
 
-    // data.forEach(practitionerData => {
-    //   const appointments = practitionerData.appointments;
-    //   let lastEndTime = startOfDay; // Initialize to opening time
+    const allSlots: Array<AvailabilitySlotBase> = [];
+    const slot_increments = options.minGap || 5; // Allow for a minimum gap of 5 minutes between slots
 
-    //   for (
-    //     let start = startOfDay;
-    //     start + SLOT_DURATION <= endOfDay;
-    //     start += slot_increments
-    //   ) {
-    //     const end = start + SLOT_DURATION;
+    data.forEach(practitionerData => {
+      const appointments = practitionerData.appointments;
+      let lastEndTime = startOfDay; // Initialize to opening time
 
-    //     const slot: AvailabilitySlotBase = {
-    //       start_time: minutesToTime(start),
-    //       finish_time: minutesToTime(end),
-    //       practitioner_id: practitionerData.practitioner_id,
-    //     };
+      for (
+        let start = startOfDay;
+        start + options.slotDuration <= endOfDay;
+        start += slot_increments
+      ) {
+        const end = start + options.slotDuration;
 
-    //     // Check if the slot is not during lunch hours, does not overlap with appointments, and is unique
-    //     if (
-    //       (end <= lunchStart || start >= lunchEnd) &&
-    //       !this._isOverlapping(slot, appointments) &&
-    //       (start === startOfDay || start >= lastEndTime + MIN_GAP) // Allow first slot to start at opening time
-    //     ) {
-    //       const slotKey = `${slot.start_time}-${slot.finish_time}`;
-    //       if (!slotSet.has(slotKey)) {
-    //         allSlots.push(slot);
-    //         slotSet.add(slotKey); // Add slot to set
-    //         lastEndTime = end; // Update the last end time
-    //       }
-    //     }
-    //   }
-    // });
+        const slot: AvailabilitySlotBase = {
+          start_time: minutesToTime(start),
+          finish_time: minutesToTime(end),
+          practitioner_id: practitionerData.practitioner_id,
+        };
 
-    // if (NUM_SUGGESTIONS) {
-    //   allSlots = this._getRandomSlots(allSlots, NUM_SUGGESTIONS);
-    // }
+        console.info("SLOT", JSON.stringify(slot), (end <= lunchStart || start >= lunchEnd), !this._isOverlapping(slot, appointments), (start === startOfDay), start >= lastEndTime + options.minGap);
 
-    // allSlots.sort((a, b) => timeToMinutes(a.start_time) - timeToMinutes(b.start_time));
+        // Check if the slot is not during lunch hours, does not overlap with appointments, and is unique
+        if (
+          (end <= lunchStart || start >= lunchEnd) &&
+          !this._isOverlapping(slot, appointments) &&
+          (start === startOfDay || start >= lastEndTime + options.minGap) // Allow first slot to start at opening time
+        ) {
+          allSlots.push(slot);
+          lastEndTime = end; // Update the last end time
+        }
+      }
+    });
 
-    this.availability = [];
+    allSlots.sort((a, b) => {
+      const aStart = timeToMinutes(a.start_time);
+      const bStart = timeToMinutes(b.start_time);
+
+      if (aStart < bStart) return -1;
+      if (aStart > bStart) return 1;
+
+      return a.practitioner_id < b.practitioner_id ? -1 : 1;
+    });
+
+    return [{ date: this._today, available_slots: allSlots }];
   }
 
   private _getRandomSlots(slots: Array<AvailabilitySlotBase>, num: number) {
-    let result = [];
+    const slotSet = new Set<string>(); // To keep track of unique slots
+    const result = [];
+
     while (result.length < num && slots.length > 0) {
       const index = Math.floor(Math.random() * slots.length);
-      result.push(slots.splice(index, 1)[0]);
+      const slot = slots[index];
+      const slotKey = slot.start_time;
+
+      if (!slotSet.has(slotKey)) {
+        result.push(slots.splice(index, 1)[0]);
+        slotSet.add(slotKey); // Add slot to set
+      }
     }
+
+    result.sort((a, b) => {
+      const aStart = timeToMinutes(a.start_time);
+      const bStart = timeToMinutes(b.start_time);
+
+      return aStart - bStart;
+    });
+
     return result;
   }
 
