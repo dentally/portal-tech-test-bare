@@ -30,7 +30,7 @@ Given the appointments which are already booked for a day, output the available 
 ### Additional Tasks
 
 - Change the solution to handle a variable number of practitioners with different appointments, and return available slots which includes different practitioners.
-- Change the solution to accept the appointment duration as a parameter.
+- Change the solution to accept a appointment duration/min gap as a parameter.
 - Change the solution to output a random variable number of suggestions.
 
 ### How to complete the test
