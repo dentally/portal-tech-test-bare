@@ -1,11 +1,9 @@
 # AppointmentAvailability
 
-To run the tech test run `npm start` from the root of the project. 
+To run the tech test run the following from the root of the project.
 
-## Prerequisites
-
-- Minimum Node.js version 18.19.0
-- Run `npm install` to install the dependencies
+Mac users: `npm start`.
+Windows users: `npm run start:win`.
 
 ## How to complete the test
 
