@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import {
+  E_Appointment_State,
   E_IndexDb_Resource,
   E_Practice_Opening_Hours,
   E_Practitioner_Lunch_Hours,
@@ -61,11 +62,12 @@ export class AppComponent implements OnInit {
       });
   }
 
-  private _generateAvailability(data: Array<PractitionerAppointmentsBase>, options?: I_AvailabilityOptions): Array<AvailabilityBase> {
+  private _generateAvailability(
+    data: Array<PractitionerAppointmentsBase>,
+    options?: I_AvailabilityOptions
+  ): Array<AvailabilityBase> {
     const startOfDay = timeToMinutes(E_Practice_Opening_Hours.START_TIME);
     const endOfDay = timeToMinutes(E_Practice_Opening_Hours.END_TIME);
-    const lunchStart = timeToMinutes(E_Practitioner_Lunch_Hours.START_TIME);
-    const lunchEnd = timeToMinutes(E_Practitioner_Lunch_Hours.END_TIME);
 
     options = {
       slotDuration: SLOT_DURATION,
@@ -75,39 +77,35 @@ export class AppComponent implements OnInit {
     };
 
     const allSlots: Array<AvailabilitySlotBase> = [];
-    const slot_increments = options.minGap || 5; // Allow for a minimum gap of 5 minutes between slots
-
-    data.forEach(practitionerData => {
+    // Loop through each practitioner's appointments
+    data.forEach((practitionerData) => {
       const appointments = practitionerData.appointments;
-      let lastEndTime = startOfDay; // Initialize to opening time
 
       for (
         let start = startOfDay;
         start + options.slotDuration <= endOfDay;
-        start += slot_increments
+        start = start
       ) {
-        const end = start + options.slotDuration;
+        const end = start + options.slotDuration; // Calculate the end time of the slot based on the slot duration
 
+        // Create a slot object that will be pushed to the allSlots array if it meets the criteria
         const slot: AvailabilitySlotBase = {
           start_time: minutesToTime(start),
           finish_time: minutesToTime(end),
           practitioner_id: practitionerData.practitioner_id,
         };
 
-        console.info("SLOT", JSON.stringify(slot), (end <= lunchStart || start >= lunchEnd), !this._isOverlapping(slot, appointments), (start === startOfDay), start >= lastEndTime + options.minGap);
-
-        // Check if the slot is not during lunch hours, does not overlap with appointments, and is unique
-        if (
-          (end <= lunchStart || start >= lunchEnd) &&
-          !this._isOverlapping(slot, appointments) &&
-          (start === startOfDay || start >= lastEndTime + options.minGap) // Allow first slot to start at opening time
-        ) {
+        // Check if the slot is valid (not during lunch hours and doesn't overlap with appointments)
+        if (this._isValidSlot(slot, appointments, options.minGap)) {
           allSlots.push(slot);
-          lastEndTime = end; // Update the last end time
+          start = end + options.minGap; // Set the new start time to the end time of the slot plus the minimum gap
+        } else {
+          start += 1; // If the slot is not available, increment the start time by 1 minute to check for the next available slot
         }
       }
     });
 
+    // Sort by start time and then by practitioner id
     allSlots.sort((a, b) => {
       const aStart = timeToMinutes(a.start_time);
       const bStart = timeToMinutes(b.start_time);
@@ -146,15 +144,29 @@ export class AppComponent implements OnInit {
     return result;
   }
 
-  private _isOverlapping = (
+  private _isValidSlot(
     slot: AvailabilitySlotBase,
-    appointments: Array<AppointmentBase>
-  ) => {
-    const { start_time: slot_start_time, finish_time: slot_finish_time } = slot;
-    return appointments.some(({ start_time, finish_time }) => {
-      const appointmentStart = timeToMinutes(start_time);
-      const appointmentEnd = timeToMinutes(finish_time);
-      return !(timeToMinutes(slot_finish_time) <= appointmentStart || timeToMinutes(slot_start_time) >= appointmentEnd);
+    appointments: Array<AppointmentBase>,
+    minGap: number
+  ): boolean {
+    const lunchStart = timeToMinutes(E_Practitioner_Lunch_Hours.START_TIME);
+    const lunchEnd = timeToMinutes(E_Practitioner_Lunch_Hours.END_TIME);
+    const slotStart = timeToMinutes(slot.start_time);
+    const slotEnd = timeToMinutes(slot.finish_time);
+
+    // Check if slot is during lunch hours
+    if (slotEnd > lunchStart && slotStart < lunchEnd) {
+      return false;
+    }
+
+    // Check if slot overlaps with any existing appointment
+    return !appointments.some(({ start_time, finish_time, state }) => {
+      if (state === E_Appointment_State.CANCELLED) return false;
+
+      const appointmentStart = timeToMinutes(start_time) - minGap;
+      const appointmentEnd = timeToMinutes(finish_time) + minGap;
+
+      return slotEnd > appointmentStart && slotStart < appointmentEnd;
     });
-  };
+  }
 }
