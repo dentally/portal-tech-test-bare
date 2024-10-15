@@ -20,7 +20,7 @@ To run the tech test run the following from the root of the project.
 
 ### Assumptions
 
-- The practitioner works from 9am to 5pm every weekday, with a lunch break between 12.30pm and 1.30pm. Appointments should only be suggested when the practitioner is working and when the practice is open.
+- The practitioner works from 8am to 6pm every weekday, with a lunch break between 12.30pm and 1.30pm. Appointments should only be suggested when the practitioner is working and when the practice is open.
 - The practitioner can only have one Appointment at a time i.e. appointments do not intersect with other appointments for the same practitioner.
 - The appointment to be booked is 30 minutes long.
 - We can assume any appointments that have been cancelled can be used
